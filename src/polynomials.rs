@@ -36,6 +36,19 @@ impl MultilinearExtension {
         }
     }
     
+    /// Create a new multilinear extension from evaluations with explicit variable count
+    pub fn from_evaluations_vec(num_vars: usize, mut evaluations: Vec<FieldElement>) -> Self {
+        let expected_size = 1 << num_vars;
+        
+        // Pad or truncate to the expected size
+        evaluations.resize(expected_size, FieldElement::zero());
+        
+        Self {
+            num_vars,
+            evaluations,
+        }
+    }
+    
     /// Create a multilinear extension from a sparse representation
     /// Only non-zero entries are provided as (index, value) pairs
     pub fn from_sparse(num_vars: usize, sparse_entries: &[(usize, FieldElement)]) -> Self {

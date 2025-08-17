@@ -19,23 +19,23 @@
 //! ## Example
 //!
 //! ```rust
-//! use twist_and_shout::{Twist, MemoryTrace, setup_params};
+//! use twist_and_shout::{Twist, MemoryTrace, setup_params, FieldElement};
 //!
 //! // Set up parameters for memory size 2^10
-//! let params = setup_params(10);
+//! let (prover_params, verifier_params) = setup_params(10);
 //!
 //! // Create a memory trace
 //! let mut trace = MemoryTrace::new(1024);
-//! trace.write(0, 42);
-//! trace.write(1, 73);
-//! let val = trace.read(0);
+//! trace.write(0, FieldElement::from(42u64)).unwrap();
+//! trace.write(1, FieldElement::from(73u64)).unwrap();
+//! let val = trace.read(0).unwrap();
 //!
 //! // Generate proof
-//! let twist = Twist::new(&params);
+//! let twist = Twist::new(&prover_params);
 //! let proof = twist.prove(&trace).unwrap();
 //!
 //! // Verify proof
-//! assert!(twist.verify(&proof).unwrap());
+//! assert!(twist.verify(&proof, &verifier_params).unwrap());
 //! ```
 
 pub mod commitments;
@@ -53,6 +53,7 @@ pub use commitments::{CommitmentScheme, KZGCommitment};
 pub use polynomials::MultilinearExtension;
 pub use utils::FieldElement;
 pub use utils::{setup_params, ProverParams, VerifierParams};
+pub use benchmarks::{ProtocolBenchmarks, BenchmarkResults};
 
 /// Common error types for the library
 #[derive(Debug, thiserror::Error)]

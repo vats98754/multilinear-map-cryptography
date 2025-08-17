@@ -7,7 +7,7 @@ use crate::utils::{FieldElement, G1Element, G2Element, CommitmentParams, Commitm
 use crate::{Result, TwistAndShoutError};
 use ark_ec::{CurveGroup, Group, pairing::Pairing};
 use ark_bn254::{Bn254, G1Affine, G2Affine};
-use ark_ff::{Field, Zero, One};
+use ark_ff::{Field, Zero, One, PrimeField, BigInteger};
 use ark_serialize::{CanonicalSerialize, CanonicalDeserialize};
 use serde::{Deserialize, Serialize};
 
@@ -66,6 +66,22 @@ pub struct KZGCommitment;
 #[derive(Debug, Clone, PartialEq)]
 pub struct KZGCommitmentValue {
     pub commitment: G1Element,
+}
+
+impl KZGCommitmentValue {
+    /// Get a field element hash of the commitment for transcripts
+    pub fn hash(&self) -> FieldElement {
+        // Convert the x-coordinate to a scalar field element via modular reduction
+        let x_coord = self.commitment.into_affine().x;
+        let x_bytes = x_coord.into_bigint().to_bytes_le();
+        
+        // Create a field element from the first 32 bytes
+        let mut bytes = [0u8; 32];
+        let copy_len = std::cmp::min(x_bytes.len(), 32);
+        bytes[..copy_len].copy_from_slice(&x_bytes[..copy_len]);
+        
+        FieldElement::from_le_bytes_mod_order(&bytes)
+    }
 }
 
 /// KZG opening proof (a point in G1)
