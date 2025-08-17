@@ -47,8 +47,8 @@ pub mod utils;
 pub mod benchmarks;
 
 // Re-export main types for convenience
-pub use twist::{Twist, TwistProof, MemoryTrace};
-pub use shout::{Shout, ShoutProof, LookupTable};
+pub use twist::{Twist, TwistProof, MemoryTrace, MemoryOp};
+pub use shout::{Shout, ShoutProof, LookupTable, LookupOp};
 pub use commitments::{CommitmentScheme, KZGCommitment};
 pub use polynomials::MultilinearExtension;
 pub use utils::FieldElement;

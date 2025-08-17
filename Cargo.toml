@@ -50,6 +50,10 @@ std = ["ark-std/std"]
 name = "prover_bench"
 harness = false
 
+[[example]]
+name = "demo"
+path = "examples/demo.rs"
+
 [lib]
 name = "twist_and_shout"
 path = "src/lib.rs"
