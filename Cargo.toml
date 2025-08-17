@@ -1,0 +1,69 @@
+[package]
+name = "twist-and-shout"
+version = "0.1.0"
+edition = "2021"
+authors = ["Twist and Shout Contributors"]
+description = "Rust implementation of Twist and Shout zk-SNARK memory checking protocols"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/vats98754/multilinear-map-cryptography"
+keywords = ["cryptography", "zero-knowledge", "zksnark", "memory-checking", "multilinear"]
+categories = ["cryptography", "mathematics"]
+
+[dependencies]
+# Arkworks ecosystem for finite fields, polynomials, and pairings
+ark-ff = "0.4"
+ark-poly = "0.4"
+ark-ec = "0.4"
+ark-std = "0.4"
+ark-serialize = "0.4"
+ark-bn254 = "0.4"
+ark-bls12-381 = "0.4"
+
+# Randomness
+rand = "0.8"
+rand_chacha = "0.3"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+
+# Error handling
+thiserror = "1.0"
+
+# Utilities
+itertools = "0.12"
+rayon = { version = "1.8", optional = true }
+
+[dev-dependencies]
+# Benchmarking
+criterion = { version = "0.5", features = ["html_reports"] }
+
+# Testing utilities
+proptest = "1.4"
+
+[features]
+default = ["kzg", "parallel"]
+kzg = ["ark-poly/parallel"]
+parallel = ["rayon", "ark-ff/parallel", "ark-poly/parallel"]
+std = ["ark-std/std"]
+
+[[bench]]
+name = "prover_bench"
+harness = false
+
+[lib]
+name = "twist_and_shout"
+path = "src/lib.rs"
+
+[profile.release]
+debug = true
+overflow-checks = false
+lto = "thin"
+incremental = false
+codegen-units = 1
+
+[profile.bench]
+debug = true
+overflow-checks = false
+lto = "thin"
+incremental = false
+codegen-units = 1
