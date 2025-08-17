@@ -54,6 +54,10 @@ harness = false
 name = "demo"
 path = "examples/demo.rs"
 
+[[example]]
+name = "comprehensive_benchmarks"
+path = "examples/comprehensive_benchmarks.rs"
+
 [lib]
 name = "twist_and_shout"
 path = "src/lib.rs"
