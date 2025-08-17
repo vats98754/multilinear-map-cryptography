@@ -44,13 +44,27 @@ pub struct ProtocolBenchmarks;
 impl ProtocolBenchmarks {
     /// Benchmark Twist protocol with various memory sizes
     pub fn benchmark_twist_scaling() -> Vec<(usize, BenchmarkResults)> {
+        Self::benchmark_twist_scaling_range(4, 8) // Good balance of coverage and speed
+    }
+    
+    /// Benchmark Twist protocol with configurable size range
+    pub fn benchmark_twist_scaling_range(min_log_size: usize, max_log_size: usize) -> Vec<(usize, BenchmarkResults)> {
         let mut results = Vec::new();
         
         // Test different memory sizes (powers of 2)
-        for log_size in 4..=10 {
+        for log_size in min_log_size..=max_log_size {
             let memory_size = 1 << log_size;
-            let num_operations = memory_size / 4; // 25% memory utilization
+            // Dynamic operation scaling: more operations for smaller sizes, fewer for larger
+            let num_operations = if memory_size <= 64 {
+                memory_size / 2  // 50% utilization for small sizes
+            } else if memory_size <= 512 {
+                memory_size / 4  // 25% utilization for medium sizes  
+            } else {
+                memory_size / 8  // 12.5% utilization for large sizes
+            };
             
+            println!("  Testing Twist with memory size: {} (2^{}), operations: {}", 
+                     memory_size, log_size, num_operations);
             let bench_result = Self::benchmark_twist_single(log_size, num_operations);
             results.push((memory_size, bench_result));
         }
@@ -112,13 +126,27 @@ impl ProtocolBenchmarks {
     
     /// Benchmark Shout protocol with various table sizes
     pub fn benchmark_shout_scaling() -> Vec<(usize, BenchmarkResults)> {
+        Self::benchmark_shout_scaling_range(4, 8) // Good balance of coverage and speed
+    }
+    
+    /// Benchmark Shout protocol with configurable size range
+    pub fn benchmark_shout_scaling_range(min_log_size: usize, max_log_size: usize) -> Vec<(usize, BenchmarkResults)> {
         let mut results = Vec::new();
         
         // Test different table sizes (powers of 2)
-        for log_size in 4..=10 {
+        for log_size in min_log_size..=max_log_size {
             let table_size = 1 << log_size;
-            let num_lookups = table_size / 4; // 25% lookup utilization
+            // Dynamic operation scaling: more lookups for smaller sizes, fewer for larger
+            let num_lookups = if table_size <= 64 {
+                table_size / 2  // 50% utilization for small sizes
+            } else if table_size <= 512 {
+                table_size / 4  // 25% utilization for medium sizes
+            } else {
+                table_size / 8  // 12.5% utilization for large sizes
+            };
             
+            println!("  Testing Shout with table size: {} (2^{}), lookups: {}", 
+                     table_size, log_size, num_lookups);
             let bench_result = Self::benchmark_shout_single(log_size, num_lookups);
             results.push((table_size, bench_result));
         }
@@ -184,26 +212,81 @@ impl ProtocolBenchmarks {
     
     /// Run comprehensive benchmark suite and print results
     pub fn run_comprehensive_benchmark() {
+        Self::run_comprehensive_benchmark_with_params(4, 8, 256)
+    }
+    
+    /// Run comprehensive benchmark suite with configurable parameters
+    pub fn run_comprehensive_benchmark_with_params(min_log_size: usize, max_log_size: usize, num_ops: usize) {
         println!("🚀 Twist and Shout Protocol Benchmark Suite");
         println!("============================================\n");
         
         // Twist scaling benchmarks
         println!("📊 Twist Protocol Scaling Analysis:");
-        let twist_results = Self::benchmark_twist_scaling();
+        let twist_results = Self::benchmark_twist_scaling_range(min_log_size, max_log_size);
         Self::print_scaling_results("Twist", &twist_results);
         
         println!("\n📊 Shout Protocol Scaling Analysis:");
-        let shout_results = Self::benchmark_shout_scaling();
+        let shout_results = Self::benchmark_shout_scaling_range(min_log_size, max_log_size);
         Self::print_scaling_results("Shout", &shout_results);
         
         // Comparative analysis at a fixed size
-        println!("\n🔄 Comparative Analysis (Memory/Table Size: 1024):");
-        let (twist_comp, shout_comp) = Self::comparative_benchmark(10, 256);
+        let compare_log_size = (min_log_size + max_log_size) / 2;
+        let compare_table_size = 1 << compare_log_size;
+        println!("\n🔄 Comparative Analysis (Memory/Table Size: {}):", compare_table_size);
+        let (twist_comp, shout_comp) = Self::comparative_benchmark(compare_log_size, num_ops);
         Self::print_comparative_results(&twist_comp, &shout_comp);
     }
     
+    /// Run quick benchmark suite for development/testing
+    pub fn run_quick_benchmark() {
+        Self::run_comprehensive_benchmark_with_params(4, 6, 64)
+    }
+    
+    /// Run ultra-fast benchmark for development (minimal sizes)
+    pub fn run_dev_benchmark() {
+        Self::run_comprehensive_benchmark_with_params(4, 5, 32)
+    }
+    
+    /// Run optimized benchmark with dynamic operation scaling
+    pub fn run_optimized_benchmark(min_log_size: usize, max_log_size: usize) {
+        println!("🚀 Optimized Twist and Shout Protocol Benchmark Suite");
+        println!("======================================================\n");
+        
+        // Dynamic operation scaling: fewer operations for larger sizes
+        for log_size in min_log_size..=max_log_size {
+            let table_size = 1 << log_size;
+            // Scale operations inversely with table size for consistent runtime
+            let num_operations = std::cmp::max(32, 512 / (1 << (log_size - 4)));
+            
+            println!("📊 Protocol Comparison at size {} (2^{}) with {} operations:", 
+                     table_size, log_size, num_operations);
+            
+            let (twist_result, shout_result) = Self::comparative_benchmark(log_size, num_operations);
+            
+            println!("Protocol | Prove(ms) | Verify(ms) | Proof(KB) | Ops/sec | Memory(KB)");
+            println!("---------|-----------|------------|-----------|---------|----------");
+            println!(
+                "Twist    | {:.2}      | {:.2}       | {:.2}      | {:.0}     | {:.1}",
+                twist_result.prove_time.as_millis(),
+                twist_result.verify_time.as_millis(),
+                twist_result.proof_size as f64 / 1024.0,
+                twist_result.prove_ops_per_second(),
+                twist_result.memory_usage as f64 / 1024.0
+            );
+            println!(
+                "Shout    | {:.2}      | {:.2}       | {:.2}      | {:.0}     | {:.1}",
+                shout_result.prove_time.as_millis(),
+                shout_result.verify_time.as_millis(),
+                shout_result.proof_size as f64 / 1024.0,
+                shout_result.prove_ops_per_second(),
+                shout_result.memory_usage as f64 / 1024.0
+            );
+            println!();
+        }
+    }
+    
     /// Print scaling benchmark results
-    fn print_scaling_results(protocol: &str, results: &[(usize, BenchmarkResults)]) {
+    pub fn print_scaling_results(protocol: &str, results: &[(usize, BenchmarkResults)]) {
         println!("Size\t| Setup(ms)\t| Prove(ms)\t| Verify(ms)\t| Proof(KB)\t| Ops/sec");
         println!("--------|---------------|---------------|---------------|---------------|--------");
         
